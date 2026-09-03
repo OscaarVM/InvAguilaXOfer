@@ -72,7 +72,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
               : 'bg-amber-500 hover:bg-amber-600 text-white'
           }`}
-          title={isPinAuthorized ? 'Registrar una nueva venta' : 'Se requiere PIN 141096 para registrar venta'}
+          title={isPinAuthorized ? 'Registrar una nueva venta' : 'Se requiere PIN de seguridad para registrar venta'}
         >
           {isPinAuthorized ? (
             <Plus className="w-3.5 h-3.5" />
@@ -100,12 +100,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         ) : (
           <button
             onClick={onRequestPinUnlock}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold transition cursor-pointer animate-pulse"
-            title="Haga clic para ingresar el PIN de acceso 141096"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold transition cursor-pointer"
+            title="Haga clic para ingresar el PIN de acceso"
           >
             <Lock className="w-3 h-3 text-amber-600" />
-            <span>PIN Protegido</span>
-            <span className="text-[10px] bg-amber-200/80 px-1 rounded font-mono font-bold">141096</span>
+            <span>Desbloquear Área Comercial</span>
           </button>
         )}
 

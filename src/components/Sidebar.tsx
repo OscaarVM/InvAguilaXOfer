@@ -279,7 +279,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isPinAuthorized ? 'Sesión Desbloqueada' : 'Área Comercial Bloqueada'}
                     </div>
                     <div className="text-[9px] text-slate-400">
-                      {isPinAuthorized ? 'Cruce y ventas accesibles' : 'PIN requerido: 141096'}
+                      {isPinAuthorized ? 'Cruce y ventas accesibles' : 'PIN requerido'}
                     </div>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
                   >
                     <KeyRound className="w-3 h-3" />
-                    <span>Ingresar PIN (141096)</span>
+                    <span>Ingresar PIN</span>
                   </button>
                 )}
               </div>

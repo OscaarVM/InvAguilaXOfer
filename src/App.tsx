@@ -194,7 +194,7 @@ export default function App() {
   // Exportar reporte maestro con todas las pestañas
   const handleExportMasterExcel = () => {
     if (!isPinAuthorized) {
-      showToast('Se requiere el PIN 141096 para exportar reportes de costos y ventas comerciales.');
+      showToast('Se requiere autorización con PIN para exportar reportes de costos y ventas comerciales.');
       handleRequestPinUnlock('cross');
       return;
     }
