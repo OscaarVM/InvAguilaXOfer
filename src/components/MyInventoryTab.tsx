@@ -4,7 +4,7 @@ import { parseMyInventoryExcel, exportMyInventoryToExcel, downloadExcelTemplate 
 import { isChineseOrigin } from '../utils/crossAnalysis';
 import { 
   Search, Upload, Download, FileSpreadsheet, Plus, Trash2, Edit3, 
-  AlertCircle, CheckCircle2, DollarSign, Box, ShieldCheck, Filter, Globe 
+  AlertCircle, CheckCircle2, DollarSign, Box, ShieldCheck, Filter, Globe, Cloud 
 } from 'lucide-react';
 
 interface MyInventoryTabProps {
@@ -272,6 +272,14 @@ export const MyInventoryTab: React.FC<MyInventoryTabProps> = ({
               </label>
             </div>
           </div>
+        </div>
+
+        {/* Nota de Sincronización Automática en la Nube */}
+        <div className="mt-3.5 px-3.5 py-2.5 rounded-lg bg-blue-50/80 border border-blue-200/80 flex items-center gap-2 text-xs text-blue-900">
+          <Cloud className="w-4 h-4 text-blue-600 shrink-0" />
+          <span>
+            <strong>Sincronización PC ⇄ Celular:</strong> Al cargar tu archivo Excel aquí en la PC, los datos se respaldan en la nube y podrás consultarlos en tiempo real desde tu móvil.
+          </span>
         </div>
 
         {uploadFeedback && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Upload, Plus, User, FileUp, Sparkles, Building2, Lock, Unlock, KeyRound } from 'lucide-react';
+import { Menu, Search, Upload, Plus, User, FileUp, Sparkles, Building2, Lock, Unlock, KeyRound, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
 
 interface TopBarProps {
   onOpenMyInventoryUpload: () => void;
@@ -11,6 +11,8 @@ interface TopBarProps {
   isPinAuthorized: boolean;
   onRequestPinUnlock: () => void;
   onLockPin: () => void;
+  cloudSyncStatus?: 'connected' | 'syncing' | 'offline';
+  lastCloudDevice?: string | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -23,6 +25,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   isPinAuthorized,
   onRequestPinUnlock,
   onLockPin,
+  cloudSyncStatus = 'connected',
+  lastCloudDevice,
 }) => {
   const handleNewSaleClick = () => {
     if (!isPinAuthorized) {
@@ -83,8 +87,42 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       </div>
 
-      {/* Buscador Rápido, Estado PIN y Perfil */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      {/* Buscador Rápido, Estado PIN, Nube y Perfil */}
+      <div className="flex items-center gap-2 sm:gap-3">
+
+        {/* Indicador de Sincronización en la Nube (PC ⇄ Móvil) */}
+        <div 
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+            cloudSyncStatus === 'connected'
+              ? 'bg-blue-50 text-blue-800 border-blue-200'
+              : cloudSyncStatus === 'syncing'
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200'
+          }`}
+          title="Tus archivos y cambios están respaldados en la base de datos de Firebase y sincronizados en tiempo real entre tu PC y tu teléfono celular."
+        >
+          {cloudSyncStatus === 'syncing' ? (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+              <span className="hidden xs:inline">Sincronizando...</span>
+            </>
+          ) : cloudSyncStatus === 'connected' ? (
+            <>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <Cloud className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline font-bold">Nube Activa</span>
+              <span className="text-[10px] text-blue-600 font-mono hidden md:inline">PC ⇄ Móvil</span>
+            </>
+          ) : (
+            <>
+              <Cloud className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-slate-500">Modo Local</span>
+            </>
+          )}
+        </div>
         
         {/* Indicador y Botón de Estado PIN */}
         {isPinAuthorized ? (

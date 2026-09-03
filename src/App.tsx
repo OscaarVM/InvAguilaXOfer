@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ProductItem, SupplierItem, Customer, SaleRecord } from './types';
 import { 
   loadStoredProducts, saveStoredProducts, 
@@ -7,6 +7,13 @@ import {
   loadStoredSales, saveStoredSales,
   resetAllToDefaults
 } from './utils/storage';
+import { 
+  saveProductsToCloud, subscribeToProducts,
+  saveSuppliersToCloud, subscribeToSuppliers,
+  saveCustomersToCloud, subscribeToCustomers,
+  saveSalesToCloud, subscribeToSales,
+  getDeviceType
+} from './firebase';
 import { computeCrossAnalysis, isChineseOrigin } from './utils/crossAnalysis';
 import { exportFullMasterReportToExcel, normalizeMedida } from './utils/excel';
 import { Sidebar } from './components/Sidebar';
@@ -23,11 +30,16 @@ import { PinModal } from './components/PinModal';
 import { ProtectedSectionLock } from './components/ProtectedSectionLock';
 
 export default function App() {
-  // Estados de datos principales
+  // Estados de datos principales (con persistencia local inicial para carga instantánea)
   const [products, setProducts] = useState<ProductItem[]>(() => loadStoredProducts());
   const [suppliers, setSuppliers] = useState<SupplierItem[]>(() => loadStoredSuppliers());
   const [customers, setCustomers] = useState<Customer[]>(() => loadStoredCustomers());
   const [sales, setSales] = useState<SaleRecord[]>(() => loadStoredSales());
+
+  // Estado de Sincronización en la Nube (PC ⇄ Móvil)
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'connected' | 'syncing' | 'offline'>('connected');
+  const [lastCloudDevice, setLastCloudDevice] = useState<string | null>(null);
+  const isInitialSyncDone = useRef(false);
 
   // Seguridad por PIN (141096) para Cruce de Datos y Sección Comercial
   const [isPinAuthorized, setIsPinAuthorized] = useState<boolean>(() => {
@@ -113,23 +125,127 @@ export default function App() {
     }, 4000);
   };
 
-  // Guardar en persistencia cuando cambien los estados
-  const handleUpdateProducts = (updated: ProductItem[]) => {
+  // Sincronización en tiempo real con Firebase Firestore (PC ⇄ Móvil)
+  useEffect(() => {
+    let isMounted = true;
+    setCloudSyncStatus('syncing');
+
+    // 1. Suscripción en tiempo real a Mi Inventario
+    const unsubProducts = subscribeToProducts(
+      (cloudProducts, meta) => {
+        if (!isMounted) return;
+        setCloudSyncStatus('connected');
+        if (meta?.device) setLastCloudDevice(meta.device);
+
+        if (cloudProducts && cloudProducts.length > 0) {
+          setProducts(cloudProducts);
+          saveStoredProducts(cloudProducts);
+        } else if (!isInitialSyncDone.current) {
+          // Si la base en la nube está vacía en el primer arranque, sembrar con los datos locales
+          const localProds = loadStoredProducts();
+          if (localProds && localProds.length > 0) {
+            saveProductsToCloud(localProds);
+          }
+        }
+      },
+      (err) => {
+        console.warn('Firestore products listener error:', err);
+        if (isMounted) setCloudSyncStatus('offline');
+      }
+    );
+
+    // 2. Suscripción a Catálogo de Proveedores
+    const unsubSuppliers = subscribeToSuppliers(
+      (cloudSuppliers) => {
+        if (!isMounted) return;
+        if (cloudSuppliers && cloudSuppliers.length > 0) {
+          setSuppliers(cloudSuppliers);
+          saveStoredSuppliers(cloudSuppliers);
+        } else if (!isInitialSyncDone.current) {
+          const localSupp = loadStoredSuppliers();
+          if (localSupp && localSupp.length > 0) {
+            saveSuppliersToCloud(localSupp);
+          }
+        }
+      },
+      (err) => console.warn('Firestore suppliers listener error:', err)
+    );
+
+    // 3. Suscripción a Clientes
+    const unsubCustomers = subscribeToCustomers(
+      (cloudCustomers) => {
+        if (!isMounted) return;
+        if (cloudCustomers && cloudCustomers.length > 0) {
+          setCustomers(cloudCustomers);
+          saveStoredCustomers(cloudCustomers);
+        } else if (!isInitialSyncDone.current) {
+          const localCust = loadStoredCustomers();
+          if (localCust && localCust.length > 0) {
+            saveCustomersToCloud(localCust);
+          }
+        }
+      },
+      (err) => console.warn('Firestore customers listener error:', err)
+    );
+
+    // 4. Suscripción a Historial de Ventas
+    const unsubSales = subscribeToSales(
+      (cloudSales) => {
+        if (!isMounted) return;
+        if (cloudSales && cloudSales.length > 0) {
+          setSales(cloudSales);
+          saveStoredSales(cloudSales);
+        } else if (!isInitialSyncDone.current) {
+          const localSales = loadStoredSales();
+          if (localSales && localSales.length > 0) {
+            saveSalesToCloud(localSales);
+          }
+        }
+      },
+      (err) => console.warn('Firestore sales listener error:', err)
+    );
+
+    isInitialSyncDone.current = true;
+
+    return () => {
+      isMounted = false;
+      unsubProducts();
+      unsubSuppliers();
+      unsubCustomers();
+      unsubSales();
+    };
+  }, []);
+
+  // Guardar en persistencia local y sincronizar a la nube Firebase
+  const handleUpdateProducts = async (updated: ProductItem[]) => {
     setProducts(updated);
     saveStoredProducts(updated);
+    setCloudSyncStatus('syncing');
+    const success = await saveProductsToCloud(updated);
+    setCloudSyncStatus(success ? 'connected' : 'offline');
+    if (success) {
+      showToast('¡Inventario guardado en la nube! Visible al instante en tu celular.');
+    }
   };
 
-  const handleUpdateSuppliers = (updated: SupplierItem[]) => {
+  const handleUpdateSuppliers = async (updated: SupplierItem[]) => {
     setSuppliers(updated);
     saveStoredSuppliers(updated);
+    setCloudSyncStatus('syncing');
+    const success = await saveSuppliersToCloud(updated);
+    setCloudSyncStatus(success ? 'connected' : 'offline');
+    if (success) {
+      showToast('¡Catálogo de proveedor sincronizado en la nube!');
+    }
   };
 
-  const handleSaveSale = (sale: SaleRecord) => {
+  const handleSaveSale = async (sale: SaleRecord) => {
     const updatedSales = [sale, ...sales];
     setSales(updatedSales);
     saveStoredSales(updatedSales);
+    saveSalesToCloud(updatedSales);
 
-    // Opcional: descontar de inventario propio si existe la medida
+    // Descontar de inventario propio si existe la medida
     let stockDeducted = false;
     const updatedProducts = products.map(p => {
       const soldItem = sale.items.find(i => 
@@ -149,46 +265,58 @@ export default function App() {
     if (stockDeducted) {
       setProducts(updatedProducts);
       saveStoredProducts(updatedProducts);
+      saveProductsToCloud(updatedProducts);
     }
 
     showToast(`¡Venta ${sale.folio} registrada con éxito! Ganancia neta: $${sale.gananciaTotal.toLocaleString('es-MX')} (${sale.margenPromedio.toFixed(1)}% margen)`);
   };
 
-  const handleDeleteSale = (saleId: string) => {
+  const handleDeleteSale = async (saleId: string) => {
     const updated = sales.filter(s => s.id !== saleId);
     setSales(updated);
     saveStoredSales(updated);
-    showToast('Registro de venta eliminado.');
+    saveSalesToCloud(updated);
+    showToast('Registro de venta eliminado de la nube y de este dispositivo.');
   };
 
-  const handleSaveCustomer = (cust: Customer) => {
+  const handleSaveCustomer = async (cust: Customer) => {
     const exists = customers.some(c => c.id === cust.id);
     let updated: Customer[];
     if (exists) {
       updated = customers.map(c => c.id === cust.id ? cust : c);
-      showToast(`Cliente ${cust.numeroCliente} actualizado.`);
+      showToast(`Cliente ${cust.numeroCliente} actualizado en la nube.`);
     } else {
       updated = [...customers, cust];
-      showToast(`Cliente ${cust.numeroCliente} registrado.`);
+      showToast(`Cliente ${cust.numeroCliente} registrado en la nube.`);
     }
     setCustomers(updated);
     saveStoredCustomers(updated);
+    saveCustomersToCloud(updated);
   };
 
-  const handleDeleteCustomer = (customerId: string) => {
+  const handleDeleteCustomer = async (customerId: string) => {
     const updated = customers.filter(c => c.id !== customerId);
     setCustomers(updated);
     saveStoredCustomers(updated);
-    showToast('Cliente eliminado del directorio.');
+    saveCustomersToCloud(updated);
+    showToast('Cliente eliminado del directorio en la nube.');
   };
 
-  const handleResetData = () => {
+  const handleResetData = async () => {
     const defaults = resetAllToDefaults();
     setProducts(defaults.products);
     setSuppliers(defaults.suppliers);
     setCustomers(defaults.customers);
     setSales(defaults.sales);
-    showToast('Se restablecieron los datos de demostración iniciales.');
+    setCloudSyncStatus('syncing');
+    await Promise.all([
+      saveProductsToCloud(defaults.products),
+      saveSuppliersToCloud(defaults.suppliers),
+      saveCustomersToCloud(defaults.customers),
+      saveSalesToCloud(defaults.sales)
+    ]);
+    setCloudSyncStatus('connected');
+    showToast('Se restablecieron los datos de demostración en local y en la nube.');
   };
 
   // Exportar reporte maestro con todas las pestañas
@@ -250,6 +378,7 @@ export default function App() {
         onResetData={handleResetData}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        cloudSyncStatus={cloudSyncStatus}
       />
 
       {/* Columna Principal */}
@@ -273,6 +402,8 @@ export default function App() {
           isPinAuthorized={isPinAuthorized}
           onRequestPinUnlock={() => handleRequestPinUnlock('cross')}
           onLockPin={handleLockPin}
+          cloudSyncStatus={cloudSyncStatus}
+          lastCloudDevice={lastCloudDevice}
         />
 
         {/* Notificación Toast Flotante */}

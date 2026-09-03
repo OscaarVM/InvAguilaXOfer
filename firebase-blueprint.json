@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "inventories": {
+      "description": "Almacén central de inventarios propios y de proveedores sincronizados entre PC y móvil",
+      "fields": {
+        "items": {
+          "type": "array",
+          "description": "Lista de artículos de inventario de llantas"
+        },
+        "totalCount": {
+          "type": "number",
+          "description": "Total de registros en el inventario"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Fecha ISO de última carga o sincronización"
+        },
+        "device": {
+          "type": "string",
+          "description": "Dispositivo que actualizó (PC o Móvil)"
+        }
+      }
+    },
+    "commercial": {
+      "description": "Directorio de clientes y registro histórico de ventas",
+      "fields": {
+        "items": {
+          "type": "array",
+          "description": "Lista de clientes o ventas registradas"
+        },
+        "totalCount": {
+          "type": "number",
+          "description": "Cantidad de registros comerciales"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Fecha ISO de última modificación"
+        }
+      }
+    }
+  }
+}

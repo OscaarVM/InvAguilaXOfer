@@ -3,7 +3,7 @@ import { SupplierItem } from '../types';
 import { parseSupplierInventoryExcel, exportSupplierInventoryToExcel, downloadExcelTemplate } from '../utils/excel';
 import { 
   Search, Upload, Download, Building2, Plus, Trash2, Edit3, 
-  AlertCircle, CheckCircle2, DollarSign, Box, Layers
+  AlertCircle, CheckCircle2, DollarSign, Box, Layers, Cloud
 } from 'lucide-react';
 
 interface SupplierInventoryTabProps {
@@ -232,6 +232,14 @@ export const SupplierInventoryTab: React.FC<SupplierInventoryTabProps> = ({
               </label>
             </div>
           </div>
+        </div>
+
+        {/* Nota de Sincronización en la Nube */}
+        <div className="mt-3.5 px-3.5 py-2.5 rounded-lg bg-purple-50/80 border border-purple-200/80 flex items-center gap-2 text-xs text-purple-900">
+          <Cloud className="w-4 h-4 text-purple-600 shrink-0" />
+          <span>
+            <strong>Sincronización PC ⇄ Celular:</strong> Los catálogos de proveedores subidos aquí en la PC quedan disponibles de forma inmediata en tu móvil para realizar cruces de precios en cualquier lugar.
+          </span>
         </div>
 
         {uploadFeedback && (

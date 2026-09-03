@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ArrowRightLeft, Package, Building2, TrendingUp, Users, 
   FileSpreadsheet, RotateCcw, X, Shield, ChevronRight,
-  Lock, Unlock, KeyRound
+  Lock, Unlock, KeyRound, Cloud, RefreshCw
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -20,6 +20,7 @@ interface SidebarProps {
   onResetData: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  cloudSyncStatus?: 'connected' | 'syncing' | 'offline';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onResetData,
   isOpenMobile,
   onCloseMobile,
+  cloudSyncStatus = 'connected',
 }) => {
   const handleNavClick = (tab: 'cross' | 'inventory' | 'supplier' | 'sales' | 'customers') => {
     const isProtected = tab === 'cross' || tab === 'sales' || tab === 'customers';
@@ -85,6 +87,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Indicador de Sincronización en la Nube */}
+        <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                cloudSyncStatus === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'
+              }`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                cloudSyncStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}></span>
+            </span>
+            <span className="text-[11px] font-medium text-slate-300">
+              {cloudSyncStatus === 'syncing' ? 'Sincronizando...' : 'Nube Firebase'}
+            </span>
+          </div>
+          <span className="text-[10px] bg-blue-900/60 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
+            PC ⇄ Móvil
+          </span>
         </div>
 
         {/* Navigation Menu */}
